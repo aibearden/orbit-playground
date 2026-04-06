@@ -55,3 +55,4 @@ Sample TLEs live in [`src/data/sampleTles.ts`](src/data/sampleTles.ts). Replace 
 
 - Mixed **LEO** and **GEO** truth objects are supported; regime badges use altitude bands from the latest SGP4 sample.
 - No drag or third-body gravity on the **player** model yet (J2 only beyond point mass).
+- Globe markers and paths use a **display-only** altitude offset so orbits read clearly above the Earth texture; telemetry still uses physical altitude.

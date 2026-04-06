@@ -1,8 +1,14 @@
 /** Mean Earth radius (km) — visualization scale matches globe.gl usage. */
 export const EARTH_RADIUS_KM = 6371;
 
-/** Minimum normalized altitude (alt / Earth radius) for markers and paths (~76 km). */
-export const DISPLAY_MIN_ALT_NORM = 0.012;
+/** Floor for bad/near-zero heights before the visual offset (alt / Earth radius). */
+export const DISPLAY_MIN_ALT_NORM = 0.015;
+
+/**
+ * Extra lift for rendering only (alt / Earth radius), added on top of physical altitude.
+ * ~0.05 ≈ 320 km — keeps markers and paths visibly off the globe at typical zoom.
+ */
+export const VISUAL_ALTITUDE_OFFSET_NORM = 0.05;
 
 export const MU_EARTH_KM3_PER_SEC2 = 398600.4418;
 

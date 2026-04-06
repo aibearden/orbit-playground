@@ -1,5 +1,7 @@
-import { DISPLAY_MIN_ALT_NORM } from "./constants";
+import { DISPLAY_MIN_ALT_NORM, VISUAL_ALTITUDE_OFFSET_NORM } from "./constants";
 import type { GlobeCoords } from "./types";
+
+const DISPLAY_ALT_FLOOR = DISPLAY_MIN_ALT_NORM + VISUAL_ALTITUDE_OFFSET_NORM;
 
 /**
  * Avoid arcs/paths that connect valid orbit points to near-surface garbage (bad samples / decay).
@@ -7,7 +9,7 @@ import type { GlobeCoords } from "./types";
 export function clampDisplayAltitude(coords: GlobeCoords[]): GlobeCoords[] {
   return coords.map((c) => ({
     ...c,
-    alt: Math.max(DISPLAY_MIN_ALT_NORM, c.alt)
+    alt: Math.max(DISPLAY_ALT_FLOOR, c.alt)
   }));
 }
 
