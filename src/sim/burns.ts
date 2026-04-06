@@ -1,9 +1,9 @@
-import type { BurnType, SatelliteState, Vec3 } from "./types";
+import type { BurnType, PlayerState, Vec3 } from "./types";
 import { cross, norm, rotateAroundAxis, scale } from "./vector";
 
 export const BURN_DELTA_V_KM_PER_SEC = 0.08;
 
-const burnVector = (state: SatelliteState, burnType: BurnType): Vec3 => {
+const burnVector = (state: PlayerState, burnType: BurnType): Vec3 => {
   const vHat = norm(state.velocityKmPerSec);
   const normal = norm(cross(state.positionKm, state.velocityKmPerSec));
 
@@ -20,7 +20,7 @@ const burnVector = (state: SatelliteState, burnType: BurnType): Vec3 => {
 };
 
 export const computeBurnImpulse = (
-  state: SatelliteState,
+  state: PlayerState,
   burnType: BurnType,
   directionDegrees: number
 ): Vec3 => {

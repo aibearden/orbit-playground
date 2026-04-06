@@ -1,19 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import Globe from "globe.gl";
 import * as THREE from "three";
-import type { Vec3 } from "../sim/types";
+import type { GlobeCoords } from "../sim/types";
 
 type GlobeController = {
   setViewpoint: (lat: number, lng: number) => void;
 };
 
-type Props = {
-  satellite: Vec3 | null;
-  history: Vec3[];
-  onReady?: (controller: GlobeController) => void;
-};
-
-type PointDatum = {
+export type GlobePointDatum = {
   lat: number;
   lng: number;
   alt: number;
@@ -21,52 +15,45 @@ type PointDatum = {
   color: string;
 };
 
-type ArcDatum = {
+export type GlobeArcDatum = {
   startLat: number;
   startLng: number;
   endLat: number;
   endLng: number;
-  color: string;
   altitude: number;
+  color: string;
 };
 
-const EARTH_RADIUS_KM = 6371;
-
-const toLatLngAlt = (v: Vec3) => {
-  const r = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-  const lat = (Math.asin(v.z / r) * 180) / Math.PI;
-  const lng = (Math.atan2(v.y, v.x) * 180) / Math.PI;
-  const alt = Math.max(0, (r - EARTH_RADIUS_KM) / EARTH_RADIUS_KM);
-  return { lat, lng, alt };
+type Props = {
+  points: GlobePointDatum[];
+  arcs: GlobeArcDatum[];
+  onReady?: (controller: GlobeController) => void;
 };
 
-export default function GlobeView({ satellite, history, onReady }: Props) {
+export function coordsToArcs(coords: GlobeCoords[], color: string): GlobeArcDatum[] {
+  if (coords.length < 2) return [];
+  const arcs: GlobeArcDatum[] = [];
+  for (let i = 1; i < coords.length; i += 1) {
+    const a = coords[i - 1];
+    const b = coords[i];
+    arcs.push({
+      startLat: a.lat,
+      startLng: a.lng,
+      endLat: b.lat,
+      endLng: b.lng,
+      altitude: Math.max(a.alt, b.alt),
+      color
+    });
+  }
+  return arcs;
+}
+
+export default function GlobeView({ points, arcs, onReady }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const globeRef = useRef<InstanceType<typeof Globe> | null>(null);
 
-  const pointData = useMemo<PointDatum[]>(() => {
-    if (!satellite) return [];
-    const coords = toLatLngAlt(satellite);
-    return [{ ...coords, size: 0.5, color: "#ffd166" }];
-  }, [satellite]);
-
-  const pathData = useMemo<ArcDatum[]>(() => {
-    if (history.length < 2) return [];
-    const arcs: ArcDatum[] = [];
-    for (let i = 1; i < history.length; i += 1) {
-      const a = toLatLngAlt(history[i - 1]);
-      const b = toLatLngAlt(history[i]);
-      arcs.push({
-        startLat: a.lat,
-        startLng: a.lng,
-        endLat: b.lat,
-        endLng: b.lng,
-        altitude: Math.max(a.alt, b.alt),
-        color: "#06d6a0"
-      });
-    }
-    return arcs;
-  }, [history]);
+  const pointData = useMemo(() => points, [points]);
+  const pathData = useMemo(() => arcs, [arcs]);
 
   useEffect(() => {
     if (!containerRef.current || globeRef.current) return;
@@ -79,8 +66,8 @@ export default function GlobeView({ satellite, history, onReady }: Props) {
     globe.pointRadius("size");
     globe.arcColor("color");
     globe.arcAltitude("altitude");
-    globe.arcStroke(0.5);
-    globe.arcDashLength(1);
+    globe.arcStroke(0.45);
+    globe.arcDashLength(0);
     globe.arcDashAnimateTime(0);
 
     const controls = globe.controls();

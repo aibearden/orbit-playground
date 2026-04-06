@@ -17,7 +17,7 @@ body,
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: minmax(380px, 420px) 1fr;
 }
 
 .panel {
@@ -33,6 +33,121 @@ body,
   margin: 0;
   color: #9ca3af;
   font-size: 0.9rem;
+}
+
+.callout {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #111827;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.fieldset {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+}
+
+.fieldset legend {
+  padding: 0 6px;
+  font-size: 0.85rem;
+}
+
+label.inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+label.inline:last-child {
+  margin-bottom: 0;
+}
+
+.sep {
+  border: 0;
+  border-top: 1px solid #1f2937;
+  margin: 4px 0;
+}
+
+.h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.truth-list ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.truth-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.truth-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.truth-alt {
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+}
+
+.badge-LEO {
+  border-color: #38bdf8;
+  color: #7dd3fc;
+}
+
+.badge-MEO {
+  border-color: #a78bfa;
+  color: #c4b5fd;
+}
+
+.badge-GEO {
+  border-color: #fb7185;
+  color: #fda4af;
+}
+
+.hint {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #111827;
+  color: #f9fafb;
 }
 
 button {

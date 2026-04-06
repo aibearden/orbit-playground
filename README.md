@@ -1,11 +1,12 @@
 # orbit-playground
 
-Client-side playground for understanding satellite orbits and experimenting with burns around Earth.
+Client-side playground for comparing **catalog orbits (SGP4 / TLE)** with a **maneuvering vehicle** integrated numerically in Earth-centered inertial coordinates.
 
 ## Stack
 
 - React + TypeScript + Vite
 - globe.gl for the Earth scene
+- [satellite.js](https://github.com/shashwatak/satellite-js) **6.x** (pure JS SGP4) for truth tracks — pinned to avoid WASM/worker bundling issues with Vite 8
 
 ## Requirements
 
@@ -28,20 +29,29 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
+## Two propagation models (read this)
+
+| Layer | What it is | Use for |
+| --- | --- | --- |
+| **Truth** | SGP4 propagation from NORAD-style two-line elements | Realistic catalog motion (sample LEO + GEO ships included). Not a maneuvering physics model. |
+| **Your satellite** | RK4 integration with two-body gravity + **J2** | Burns as impulses; this is the sandbox vehicle. |
+
+These models are **different** and are labeled in the UI. Do not expect them to match each other numerically.
+
 ## Controls
 
-- **Add Satellite**: spawns one satellite in a default low Earth orbit.
-- **Thruster Direction slider**: rotates burn direction around the Earth-relative radial axis.
-- **Burn buttons**:
-  - Prograde Burn
-  - Retrograde Burn
-  - Normal Burn
-  - Anti-Normal Burn
-- **View Latitude / View Longitude sliders**: rotate the camera frame to inspect orbits in 3D.
+- **Time warp**: simulation seconds advanced per real-time second.
+- **Layers**: toggle truth (SGP4) and your satellite independently.
+- **Truth regime filter**: show only LEO / MEO / GEO by live altitude band.
+- **Add / reset your satellite**: spawns a default low Earth orbit for the numerical vehicle.
+- **Thruster direction** + **burn buttons** (prograde, retrograde, normal, anti-normal): apply only to **your** satellite.
+- **View latitude / longitude**: rotate the camera.
 
-## Notes (v1 simplifications)
+## Data
 
-- Two-body Earth gravity only.
-- One satellite at a time.
-- Fixed burn impulse per click.
-- Orbital path is always visible while satellite exists.
+Sample TLEs live in [`src/data/sampleTles.ts`](src/data/sampleTles.ts). Replace them with fresh lines from [Celestrak](https://celestrak.org/) or similar when epochs drift too far from your simulation clock.
+
+## Notes
+
+- Mixed **LEO** and **GEO** truth objects are supported; regime badges use altitude bands from the latest SGP4 sample.
+- No drag or third-body gravity on the **player** model yet (J2 only beyond point mass).

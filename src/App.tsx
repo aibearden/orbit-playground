@@ -1,15 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import GlobeView from "./components/GlobeView";
 import ControlPanel from "./components/ControlPanel";
-import { EARTH_RADIUS_KM, addSatellite, applyBurn, initialState, stepSimulation } from "./sim/orbitEngine";
+import GlobeView, { coordsToArcs, type GlobeArcDatum, type GlobePointDatum } from "./components/GlobeView";
+import { SAMPLE_TRUTH_SATELLITES } from "./data/sampleTles";
+import { eciPositionToGlobeCoords } from "./sim/coords";
+import { regimeMatchesFilter } from "./sim/filters";
+import {
+  addPlayerSatellite,
+  advanceSimulation,
+  applyBurn,
+  createInitialWorld,
+  playerTelemetryLine,
+  truthTelemetryLine,
+  type WorldState
+} from "./sim/simulation";
+import { initTruthSatellites, sampleTruthAt } from "./sim/truthSgp4";
 import type { BurnType } from "./sim/types";
-import { mag } from "./sim/vector";
-
-const STEP_DT_SECONDS = 1.25;
 
 export default function App() {
-  const [simState, setSimState] = useState(initialState);
-  const [burnHeadingDeg, setBurnHeadingDeg] = useState(0);
+  const [world, setWorld] = useState<WorldState>(() =>
+    createInitialWorld(initTruthSatellites(SAMPLE_TRUTH_SATELLITES))
+  );
   const [cameraLatitude, setCameraLatitude] = useState(20);
   const [cameraLongitude, setCameraLongitude] = useState(30);
   const globeController = useRef<{ setViewpoint: (lat: number, lng: number) => void } | null>(null);
@@ -19,18 +29,9 @@ export default function App() {
     let lastTime = performance.now();
 
     const tick = (now: number) => {
-      const dt = (now - lastTime) / 1000;
+      const dtWall = (now - lastTime) / 1000;
       lastTime = now;
-      const steps = Math.max(1, Math.round((dt * 60) / 1.2));
-
-      setSimState((prev) => {
-        let next = prev;
-        for (let i = 0; i < steps; i += 1) {
-          next = stepSimulation(next, STEP_DT_SECONDS);
-        }
-        return next;
-      });
-
+      setWorld((prev) => advanceSimulation(prev, dtWall));
       raf = requestAnimationFrame(tick);
     };
 
@@ -42,40 +43,82 @@ export default function App() {
     globeController.current?.setViewpoint(cameraLatitude, cameraLongitude);
   }, [cameraLatitude, cameraLongitude]);
 
-  const telemetry = useMemo(() => {
-    const sat = simState.satellite;
-    if (!sat) return "No satellite yet. Click Add Satellite to begin.";
+  const simDate = useMemo(
+    () => new Date(world.epochMs + world.simElapsedSec * 1000),
+    [world.epochMs, world.simElapsedSec]
+  );
 
-    const radius = mag(sat.positionKm);
-    const altitude = radius - EARTH_RADIUS_KM;
-    const speed = mag(sat.velocityKmPerSec);
+  const { globePoints, globeArcs } = useMemo(() => {
+    const points: GlobePointDatum[] = [];
+    const arcs: GlobeArcDatum[] = [];
 
-    return `Altitude: ${altitude.toFixed(1)} km | Speed: ${speed.toFixed(3)} km/s | Heading offset: ${burnHeadingDeg.toFixed(0)} deg`;
-  }, [simState.satellite, burnHeadingDeg]);
+    if (world.showPlayer && world.player) {
+      const coords = eciPositionToGlobeCoords(world.player.positionKm, simDate);
+      points.push({ ...coords, size: 0.55, color: "#ffd166" });
+      arcs.push(...coordsToArcs(world.playerHistory, "#06d6a0"));
+    }
+
+    if (world.showTruth) {
+      for (const tr of world.truthRuntimes) {
+        const sample = sampleTruthAt(tr.satrec, simDate);
+        if (!sample || !regimeMatchesFilter(sample.regime, world.truthRegimeFilter)) {
+          continue;
+        }
+        points.push({ ...sample.coords, size: 0.42, color: tr.config.color });
+        const hist = world.truthHistories[tr.config.id] ?? [];
+        arcs.push(...coordsToArcs(hist, tr.config.color));
+      }
+    }
+
+    return { globePoints: points, globeArcs: arcs };
+  }, [world, simDate]);
+
+  const truthRows = useMemo(() => {
+    return world.truthRuntimes.map((tr) => {
+      const sample = sampleTruthAt(tr.satrec, simDate);
+      return {
+        id: tr.config.id,
+        name: tr.config.name,
+        regimeHint: tr.config.regimeHint,
+        regime: sample?.regime ?? tr.config.regimeHint,
+        altitudeKm: sample?.altitudeKm ?? null
+      };
+    });
+  }, [world.truthRuntimes, simDate]);
 
   const onBurn = (burnType: BurnType) => {
-    setSimState((prev) => applyBurn(prev, burnType, burnHeadingDeg));
+    setWorld((prev) => applyBurn(prev, burnType));
   };
 
   return (
     <main className="app">
       <ControlPanel
-        hasSatellite={Boolean(simState.satellite)}
-        burnHeadingDeg={burnHeadingDeg}
+        hasPlayer={Boolean(world.player)}
+        burnHeadingDeg={world.burnHeadingDeg}
         cameraLatitude={cameraLatitude}
         cameraLongitude={cameraLongitude}
-        onAddSatellite={() => setSimState(addSatellite())}
-        onBurnHeadingChange={setBurnHeadingDeg}
+        timeWarp={world.timeWarp}
+        showTruth={world.showTruth}
+        showPlayer={world.showPlayer}
+        truthRegimeFilter={world.truthRegimeFilter}
+        truthRows={truthRows}
+        onAddPlayer={() => setWorld((prev) => addPlayerSatellite(prev))}
+        onBurnHeadingChange={(value) => setWorld((prev) => ({ ...prev, burnHeadingDeg: value }))}
         onCameraLatitudeChange={setCameraLatitude}
         onCameraLongitudeChange={setCameraLongitude}
+        onTimeWarpChange={(value) => setWorld((prev) => ({ ...prev, timeWarp: value }))}
+        onShowTruthChange={(value) => setWorld((prev) => ({ ...prev, showTruth: value }))}
+        onShowPlayerChange={(value) => setWorld((prev) => ({ ...prev, showPlayer: value }))}
+        onTruthRegimeFilterChange={(value) => setWorld((prev) => ({ ...prev, truthRegimeFilter: value }))}
         onBurn={onBurn}
-        telemetryText={telemetry}
+        playerTelemetry={playerTelemetryLine(world)}
+        truthTelemetry={truthTelemetryLine(world)}
       />
 
       <section className="viewport">
         <GlobeView
-          satellite={simState.satellite?.positionKm ?? null}
-          history={simState.history}
+          points={globePoints}
+          arcs={globeArcs}
           onReady={(controller) => {
             globeController.current = controller;
           }}
