@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Vite generated files if accidentally emitted
+vite.config.js
+vite.config.d.ts
