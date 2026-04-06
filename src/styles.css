@@ -211,6 +211,46 @@ input[type="range"] {
   height: 100%;
 }
 
+.globe-fallback-wrap {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+  overflow: auto;
+  background: #05070d;
+}
+
+.webgl-fallback {
+  max-width: 520px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #111827;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.webgl-fallback h2 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+}
+
+.webgl-fallback ol {
+  margin: 10px 0 0;
+  padding-left: 1.25rem;
+}
+
+.webgl-fallback .mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+
+.webgl-fallback .hint {
+  margin: 12px 0 0;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 960px) {
   .app {
     grid-template-columns: 1fr;

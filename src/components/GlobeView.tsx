@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Globe from "globe.gl";
 import * as THREE from "three";
+import { canCreateWebGLContext, isLikelyDisabledWebGL } from "../lib/webglSupport";
+import WebGLBlocked from "./WebGLBlocked";
 
 type GlobeController = {
   setViewpoint: (lat: number, lng: number) => void;
@@ -29,6 +31,10 @@ type Props = {
 export default function GlobeView({ points, paths, onReady }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const globeRef = useRef<InstanceType<typeof Globe> | null>(null);
+  const onReadyRef = useRef(onReady);
+  const [globeFailed, setGlobeFailed] = useState(false);
+
+  onReadyRef.current = onReady;
 
   const pointData = useMemo(() => points, [points]);
   const pathData = useMemo(() => paths, [paths]);
@@ -36,7 +42,44 @@ export default function GlobeView({ points, paths, onReady }: Props) {
   useEffect(() => {
     if (!containerRef.current || globeRef.current) return;
 
-    const globe = new Globe(containerRef.current);
+    if (!canCreateWebGLContext()) {
+      setGlobeFailed(true);
+      return;
+    }
+
+    let globe: InstanceType<typeof Globe>;
+    try {
+      globe = new Globe(containerRef.current, {
+        rendererConfig: {
+          antialias: true,
+          alpha: true,
+          powerPreference: "high-performance",
+          failIfMajorPerformanceCaveat: false
+        }
+      });
+    } catch {
+      setGlobeFailed(true);
+      return;
+    }
+
+    const gl = globe.renderer().getContext() as WebGLRenderingContext | WebGL2RenderingContext | null;
+    if (!gl || isLikelyDisabledWebGL(gl)) {
+      try {
+        globe._destructor();
+      } catch {
+        /* ignore */
+      }
+      setGlobeFailed(true);
+      return;
+    }
+
+    const canvas = globe.renderer().domElement;
+    const onCanvasLost = (e: Event) => {
+      e.preventDefault();
+      setGlobeFailed(true);
+    };
+    canvas.addEventListener("webglcontextlost", onCanvasLost);
+
     globe.globeImageUrl(`${import.meta.env.BASE_URL}earth-blue-marble.jpg`);
     globe.backgroundColor("#05070d");
     globe.pointAltitude("alt");
@@ -66,7 +109,7 @@ export default function GlobeView({ points, paths, onReady }: Props) {
 
     globeRef.current = globe;
 
-    onReady?.({
+    onReadyRef.current?.({
       setViewpoint: (lat, lng) => {
         globe.pointOfView({ lat, lng, altitude: 2.2 }, 350);
       }
@@ -82,18 +125,33 @@ export default function GlobeView({ points, paths, onReady }: Props) {
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
+      canvas.removeEventListener("webglcontextlost", onCanvasLost);
+      try {
+        globeRef.current?._destructor();
+      } catch {
+        /* ignore */
+      }
+      globeRef.current = null;
     };
-  }, [onReady]);
+  }, []);
 
   useEffect(() => {
-    if (!globeRef.current) return;
+    if (!globeRef.current || globeFailed) return;
     globeRef.current.pointsData(pointData);
-  }, [pointData]);
+  }, [pointData, globeFailed]);
 
   useEffect(() => {
-    if (!globeRef.current) return;
+    if (!globeRef.current || globeFailed) return;
     globeRef.current.pathsData(pathData);
-  }, [pathData]);
+  }, [pathData, globeFailed]);
+
+  if (globeFailed) {
+    return (
+      <div className="globe globe-fallback-wrap">
+        <WebGLBlocked />
+      </div>
+    );
+  }
 
   return <div ref={containerRef} className="globe" />;
 }

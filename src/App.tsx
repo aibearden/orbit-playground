@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ControlPanel from "./components/ControlPanel";
 import GlobeView, { type GlobePathDatum, type GlobePointDatum } from "./components/GlobeView";
 import { SAMPLE_TRUTH_SATELLITES } from "./data/sampleTles";
@@ -97,6 +97,10 @@ export default function App() {
     setWorld((prev) => applyBurn(prev, burnType));
   };
 
+  const onGlobeReady = useCallback((controller: { setViewpoint: (lat: number, lng: number) => void }) => {
+    globeController.current = controller;
+  }, []);
+
   return (
     <main className="app">
       <ControlPanel
@@ -123,13 +127,7 @@ export default function App() {
       />
 
       <section className="viewport">
-        <GlobeView
-          points={globePoints}
-          paths={globePaths}
-          onReady={(controller) => {
-            globeController.current = controller;
-          }}
-        />
+        <GlobeView points={globePoints} paths={globePaths} onReady={onGlobeReady} />
       </section>
     </main>
   );
