@@ -9,7 +9,8 @@ Client-side playground for understanding satellite orbits and experimenting with
 
 ## Requirements
 
-- **Node.js 18+** (including early Node 22.x such as 22.0.0). The project pins **Vite 5** so dev and build work without native Rolldown bindings and without needing Node 22.12+.
+- **Vite 8** needs a supported Node.js version: **20.19+** (LTS 20.x) or **22.12+** (current 22.x). Earlier releases such as **22.0.0** are not supported and may fail with Rolldown native binding errors.
+- Use [nvm](https://github.com/nvm-sh/nvm), [fnm](https://github.com/Schniz/fnm), or your OS package manager to install a matching Node, then reinstall dependencies.
 
 ## Run
 
@@ -19,6 +20,13 @@ npm run dev
 ```
 
 Then open the local Vite URL in your browser.
+
+If `npm install` fails with missing `@rolldown/binding-*` or native binding errors, remove the install and retry after upgrading Node (see Requirements). As a last resort:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
 
 ## Controls
 
