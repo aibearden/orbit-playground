@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import Globe from "globe.gl";
 import * as THREE from "three";
-import type { GlobeCoords } from "../sim/types";
 
 type GlobeController = {
   setViewpoint: (lat: number, lng: number) => void;
@@ -15,45 +14,24 @@ export type GlobePointDatum = {
   color: string;
 };
 
-export type GlobeArcDatum = {
-  startLat: number;
-  startLng: number;
-  endLat: number;
-  endLng: number;
-  altitude: number;
+/** One continuous orbit polyline for globe.gl `pathsData`. */
+export type GlobePathDatum = {
   color: string;
+  points: { lat: number; lng: number; alt: number }[];
 };
 
 type Props = {
   points: GlobePointDatum[];
-  arcs: GlobeArcDatum[];
+  paths: GlobePathDatum[];
   onReady?: (controller: GlobeController) => void;
 };
 
-export function coordsToArcs(coords: GlobeCoords[], color: string): GlobeArcDatum[] {
-  if (coords.length < 2) return [];
-  const arcs: GlobeArcDatum[] = [];
-  for (let i = 1; i < coords.length; i += 1) {
-    const a = coords[i - 1];
-    const b = coords[i];
-    arcs.push({
-      startLat: a.lat,
-      startLng: a.lng,
-      endLat: b.lat,
-      endLng: b.lng,
-      altitude: Math.max(a.alt, b.alt),
-      color
-    });
-  }
-  return arcs;
-}
-
-export default function GlobeView({ points, arcs, onReady }: Props) {
+export default function GlobeView({ points, paths, onReady }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const globeRef = useRef<InstanceType<typeof Globe> | null>(null);
 
   const pointData = useMemo(() => points, [points]);
-  const pathData = useMemo(() => arcs, [arcs]);
+  const pathData = useMemo(() => paths, [paths]);
 
   useEffect(() => {
     if (!containerRef.current || globeRef.current) return;
@@ -64,11 +42,17 @@ export default function GlobeView({ points, arcs, onReady }: Props) {
     globe.pointAltitude("alt");
     globe.pointColor("color");
     globe.pointRadius("size");
-    globe.arcColor("color");
-    globe.arcAltitude("altitude");
-    globe.arcStroke(0.45);
-    globe.arcDashLength(0);
-    globe.arcDashAnimateTime(0);
+
+    globe.pathsData([]);
+    globe.pathPoints("points");
+    globe.pathPointLat("lat");
+    globe.pathPointLng("lng");
+    globe.pathPointAlt("alt");
+    globe.pathColor("color");
+    globe.pathStroke(0.35);
+    globe.pathResolution(14);
+    globe.pathDashLength(0);
+    globe.pathDashAnimateTime(0);
 
     const controls = globe.controls();
     controls.enablePan = false;
@@ -108,7 +92,7 @@ export default function GlobeView({ points, arcs, onReady }: Props) {
 
   useEffect(() => {
     if (!globeRef.current) return;
-    globeRef.current.arcsData(pathData);
+    globeRef.current.pathsData(pathData);
   }, [pathData]);
 
   return <div ref={containerRef} className="globe" />;

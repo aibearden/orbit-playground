@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ControlPanel from "./components/ControlPanel";
-import GlobeView, { coordsToArcs, type GlobeArcDatum, type GlobePointDatum } from "./components/GlobeView";
+import GlobeView, { type GlobePathDatum, type GlobePointDatum } from "./components/GlobeView";
 import { SAMPLE_TRUTH_SATELLITES } from "./data/sampleTles";
 import { eciPositionToGlobeCoords } from "./sim/coords";
+import { prepareOrbitPathPoints } from "./sim/orbitPath";
 import { regimeMatchesFilter } from "./sim/filters";
 import {
   addPlayerSatellite,
@@ -48,14 +49,17 @@ export default function App() {
     [world.epochMs, world.simElapsedSec]
   );
 
-  const { globePoints, globeArcs } = useMemo(() => {
+  const { globePoints, globePaths } = useMemo(() => {
     const points: GlobePointDatum[] = [];
-    const arcs: GlobeArcDatum[] = [];
+    const paths: GlobePathDatum[] = [];
 
     if (world.showPlayer && world.player) {
       const coords = eciPositionToGlobeCoords(world.player.positionKm, simDate);
       points.push({ ...coords, size: 0.55, color: "#ffd166" });
-      arcs.push(...coordsToArcs(world.playerHistory, "#06d6a0"));
+      const pts = prepareOrbitPathPoints(world.playerHistory);
+      if (pts.length >= 2) {
+        paths.push({ color: "#06d6a0", points: pts });
+      }
     }
 
     if (world.showTruth) {
@@ -66,11 +70,14 @@ export default function App() {
         }
         points.push({ ...sample.coords, size: 0.42, color: tr.config.color });
         const hist = world.truthHistories[tr.config.id] ?? [];
-        arcs.push(...coordsToArcs(hist, tr.config.color));
+        const pts = prepareOrbitPathPoints(hist);
+        if (pts.length >= 2) {
+          paths.push({ color: tr.config.color, points: pts });
+        }
       }
     }
 
-    return { globePoints: points, globeArcs: arcs };
+    return { globePoints: points, globePaths: paths };
   }, [world, simDate]);
 
   const truthRows = useMemo(() => {
@@ -118,7 +125,7 @@ export default function App() {
       <section className="viewport">
         <GlobeView
           points={globePoints}
-          arcs={globeArcs}
+          paths={globePaths}
           onReady={(controller) => {
             globeController.current = controller;
           }}

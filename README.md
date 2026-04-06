@@ -5,7 +5,7 @@ Client-side playground for comparing **catalog orbits (SGP4 / TLE)** with a **ma
 ## Stack
 
 - React + TypeScript + Vite
-- globe.gl for the Earth scene
+- globe.gl for the Earth scene (orbit trails use **paths** with great-circle subdivision, not chained two-point arcs)
 - [satellite.js](https://github.com/shashwatak/satellite-js) **6.x** (pure JS SGP4) for truth tracks — pinned to avoid WASM/worker bundling issues with Vite 8
 
 ## Requirements

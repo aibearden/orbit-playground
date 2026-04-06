@@ -1,5 +1,5 @@
 import { eciToGeodetic, gstime, radiansToDegrees } from "satellite.js";
-import { EARTH_RADIUS_KM } from "./constants";
+import { DISPLAY_MIN_ALT_NORM, EARTH_RADIUS_KM } from "./constants";
 import type { Vec3 } from "./types";
 
 /** Map ECI position (km) to globe.gl lat/lng and normalized altitude (multiples of Earth radius). */
@@ -9,6 +9,6 @@ export function eciPositionToGlobeCoords(eciKm: Vec3, at: Date): { lat: number; 
   return {
     lat: radiansToDegrees(geo.latitude),
     lng: radiansToDegrees(geo.longitude),
-    alt: Math.max(0, geo.height) / EARTH_RADIUS_KM
+    alt: Math.max(DISPLAY_MIN_ALT_NORM, Math.max(0, geo.height) / EARTH_RADIUS_KM)
   };
 }
