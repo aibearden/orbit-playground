@@ -7,6 +7,10 @@ Client-side playground for understanding satellite orbits and experimenting with
 - React + TypeScript + Vite
 - globe.gl for the Earth scene
 
+## Requirements
+
+- **Node.js 18+** (including early Node 22.x such as 22.0.0). The project pins **Vite 5** so dev and build work without native Rolldown bindings and without needing Node 22.12+.
+
 ## Run
 
 ```bash
