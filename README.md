@@ -20,7 +20,12 @@ npm install
 npm run dev
 ```
 
-Then open the local Vite URL in your browser.
+Then open the local Vite URL in your browser (for example `http://localhost:5173`).
+
+### If it works in Cursor’s preview but not in Chrome
+
+- **Use the dev server URL** printed by Vite. Do **not** double‑click `index.html` or open `dist/index.html` from disk — Chrome will use the `file://` origin, which breaks ES module imports and behaves differently from the embedded preview.
+- The globe texture is loaded from your own **`public/`** folder (same origin as the app), so it does not depend on protocol‑relative CDN URLs that can fail under some origins or mixed‑content rules.
 
 If `npm install` fails with missing `@rolldown/binding-*` or native binding errors, remove the install and retry after upgrading Node (see Requirements). As a last resort:
 

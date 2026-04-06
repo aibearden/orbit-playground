@@ -37,7 +37,7 @@ export default function GlobeView({ points, paths, onReady }: Props) {
     if (!containerRef.current || globeRef.current) return;
 
     const globe = new Globe(containerRef.current);
-    globe.globeImageUrl("//unpkg.com/three-globe/example/img/earth-blue-marble.jpg");
+    globe.globeImageUrl(`${import.meta.env.BASE_URL}earth-blue-marble.jpg`);
     globe.backgroundColor("#05070d");
     globe.pointAltitude("alt");
     globe.pointColor("color");
